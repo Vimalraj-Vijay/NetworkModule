@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="server_error">Internal Server Error. Please try again later.</string>
+    <string name="service_unavailable">Service Unavailable. Please try again later.</string>
+    <string name="bad_request">Bad Request</string>
+    <string name="unauthorized">Unauthorized. Please check your credentials.</string>
+    <string name="forbidden_access_denied">Forbidden. Access is denied.</string>
+    <string name="resource_not_found">Resource not found.</string>
+    <string name="unknown_http_error">Unexpected HTTP Error</string>
+    <string name="timeout">Request timed out. Please try again.</string>
+    <string name="io_exception">Input/Output error.</string>
+    <string name="parse_failed">Malformed JSON received. Parsing failed.</string>
+    <string name="invalid_argument">Invalid argument provided.</string>
+    <string name="illegal_application_state">Illegal application state</string>
+    <string name="unexpected_error">Unexpected error occurred</string>
+    <string name="empty_response">Empty Body response</string>
+</resources>
