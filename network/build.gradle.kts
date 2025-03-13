@@ -41,7 +41,7 @@ publishing {
                 from(components["release"])
                 groupId = "com.github.Vimalraj-Vijay"
                 artifactId = "NetworkModule"
-                version = "1.0.0"
+                version = "2.0.0"
             }
         }
     }
@@ -58,17 +58,17 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Dagger-Hilt
-    implementation(libs.hilt.android)
+    api(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     //Retrofit
-    implementation(libs.retrofit)
-    implementation(libs.converter.gson)
-    implementation(libs.okhttp)
-    implementation(libs.logging.interceptor)
+    api(libs.retrofit)
+    api(libs.converter.gson)
+    api(libs.okhttp)
+    api(libs.logging.interceptor)
 
     //Coroutines
-    implementation(libs.coroutines)
+    api(libs.coroutines)
 
 
 }
