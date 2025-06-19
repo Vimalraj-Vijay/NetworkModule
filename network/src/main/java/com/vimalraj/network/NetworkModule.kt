@@ -59,8 +59,7 @@ object NetworkModule {
     @Named("AuthInterceptor")
     fun provideAuthInterceptor(): Interceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()
-            .addHeader("Authorization", "BEARER_TOKEN")
-            .addHeader("Accept", "application/json")
+            .addHeader("Content-Type", "application/json")
             .build()
         chain.proceed(request)
     }
