@@ -60,3 +60,7 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
         remoteApiError = remoteApiError
     )
 }
+
+private fun accessDeniedError(): ResultHandler<Nothing> {
+    return ResultHandler.AccessDenied
+}
