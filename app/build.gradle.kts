@@ -45,10 +45,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    //Retrofit
-    api(libs.retrofit)
-    api(libs.converter.gson)
-    api(libs.okhttp)
-    api(libs.logging.interceptor)
+    implementation(project(":network"))
 
 }
