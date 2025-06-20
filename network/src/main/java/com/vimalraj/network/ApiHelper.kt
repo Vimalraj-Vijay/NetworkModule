@@ -5,37 +5,47 @@ import com.google.gson.JsonParseException
 import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
+import java.net.HttpURLConnection
 import java.util.concurrent.TimeoutException
 
 // Safe API call handler with suspend
 suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ResultHandler<T> {
     return try {
         val response = apiCall()
-        when {
-            response.isSuccessful -> {
-                response.body()?.let { ResultHandler.Success(it) }
-                    ?: ResultHandler.Error(
-                        message = "HTTP 200: Empty response body",
-                        remoteApiError = RemoteApiError.EMPTY_BODY
-                    )
-            }
+        val body = response.body()
 
-            else -> ResultHandler.Error(
+        if (response.isSuccessful) {
+            if (body != null) {
+                return if (response.code() == HttpURLConnection.HTTP_OK) {
+                    ResultHandler.Success(body)
+                } else {
+                    ResultHandler.Partial(body)
+                }
+            } else {
+                ResultHandler.Error(
+                    message = "HTTP ${response.code()}: Empty response body",
+                    remoteApiError = RemoteApiError.EMPTY_BODY
+                )
+            }
+        } else {
+            ResultHandler.Error(
                 message = "HTTP Error: ${response.code()} - ${response.message()}",
                 remoteApiError = RemoteApiError.UNEXPECTED_ERROR
             )
         }
     } catch (exception: Throwable) {
-        exception.stackTrace
         handleApiError(exception)
     }
 }
 
 // Exception handling with detailed Resource.Error
 private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
+    println("🚨 Exception caught in Network Call 🚨")
+    exception.printStackTrace()
     val remoteApiError = when (exception) {
         is TimeoutException -> RemoteApiError.TIMEOUT
         is NoConnectivityException -> RemoteApiError.NO_INTERNET
+        is JsonParseException, is MalformedJsonException -> RemoteApiError.JSON_PARSE
         is IOException -> RemoteApiError.IO_ERROR
         is HttpException -> {
             when (exception.code()) {
@@ -48,8 +58,6 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
                 else -> RemoteApiError.UNEXPECTED_HTTP_ERROR
             }
         }
-
-        is JsonParseException, is MalformedJsonException -> RemoteApiError.JSON_PARSE
         is IllegalArgumentException -> RemoteApiError.ILLEGAL_ARGUMENT
         is IllegalStateException -> RemoteApiError.ILLEGAL_STATE
         else -> RemoteApiError.UNEXPECTED_ERROR
@@ -59,8 +67,4 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
         exception = exception,
         remoteApiError = remoteApiError
     )
-}
-
-fun accessDeniedError(): ResultHandler<Nothing> {
-    return ResultHandler.AccessDenied
 }
