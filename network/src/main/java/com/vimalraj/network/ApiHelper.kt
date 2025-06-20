@@ -61,6 +61,6 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
     )
 }
 
-private fun accessDeniedError(): ResultHandler<Nothing> {
+fun accessDeniedError(): ResultHandler<Nothing> {
     return ResultHandler.AccessDenied
 }
