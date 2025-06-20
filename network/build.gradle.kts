@@ -62,10 +62,10 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     //Retrofit
-    implementation(libs.retrofit)
-    implementation(libs.converter.gson)
-    implementation(libs.okhttp)
-    implementation(libs.logging.interceptor)
+    api(libs.retrofit)
+    api(libs.converter.gson)
+    api(libs.okhttp)
+    api(libs.logging.interceptor)
 
     //Coroutines
     implementation(libs.coroutines)
