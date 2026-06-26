@@ -32,18 +32,42 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    publishing {
+        singleVariant("debug") {
+            withSourcesJar()
+        }
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 publishing {
     publications {
-        register<MavenPublication>("release") {
+
+        create<MavenPublication>("debug") {
+            groupId = "com.github.Vimalraj-Vijay"
+            artifactId = "NetworkModule"
+            version = "1.0.0-debug"
+
             afterEvaluate {
-                from(components["release"])
-                groupId = "com.github.Vimalraj-Vijay"
-                artifactId = "NetworkModule"
-                version = "1.0.0"
+                from(components["debug"])
             }
         }
+
+        create<MavenPublication>("release") {
+            groupId = "com.github.Vimalraj-Vijay"
+            artifactId = "NetworkModule"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
+
+    repositories {
+        mavenLocal()
     }
 }
 

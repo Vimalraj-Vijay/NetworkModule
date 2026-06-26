@@ -14,7 +14,7 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ResultHandler<T
         val response = apiCall()
         val body = response.body()
 
-        if (response.isSuccessful) {
+        if (response.isSuccessful && response.errorBody() == null) {
             if (body != null) {
                 return if (response.code() == HttpURLConnection.HTTP_OK) {
                     ResultHandler.Success(body)
@@ -43,6 +43,7 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
     println("🚨 Exception caught in Network Call 🚨")
     exception.printStackTrace()
     val remoteApiError = when (exception) {
+        is ServerErrorException -> mapStatusToError(exception.status)
         is TimeoutException -> RemoteApiError.TIMEOUT
         is NoConnectivityException -> RemoteApiError.NO_INTERNET
         is JsonParseException, is MalformedJsonException -> RemoteApiError.JSON_PARSE
@@ -67,4 +68,26 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
         exception = exception,
         remoteApiError = remoteApiError
     )
+}
+
+/**
+ * Map server status strings to RemoteApiError
+ * Used when server returns 200 OK with error details in response body
+ */
+private fun mapStatusToError(status: String?): RemoteApiError {
+    return when {
+        status == null -> RemoteApiError.UNEXPECTED_ERROR
+        status.contains("UserException", ignoreCase = true) -> RemoteApiError.BAD_REQUEST
+        status.contains("ValidationException", ignoreCase = true) -> RemoteApiError.BAD_REQUEST
+        status.contains("AuthException", ignoreCase = true) -> RemoteApiError.UNAUTHORIZED
+        status.contains("NotFoundException", ignoreCase = true) -> RemoteApiError.RESOURCE_NOT_FOUND
+        status.contains("ServerException", ignoreCase = true) -> RemoteApiError.SERVER_ERROR
+        status.contains("TimeoutException", ignoreCase = true) -> RemoteApiError.TIMEOUT
+        status.contains(
+            "ForbiddenException",
+            ignoreCase = true
+        ) -> RemoteApiError.FORBIDDEN_ACCESS_DENIED
+
+        else -> RemoteApiError.UNEXPECTED_ERROR
+    }
 }

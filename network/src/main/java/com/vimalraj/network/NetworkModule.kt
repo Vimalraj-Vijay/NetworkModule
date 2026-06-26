@@ -66,9 +66,17 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @Named("ErrorResponseInterceptor")
+    fun provideErrorResponseInterceptor(): Interceptor {
+        return ErrorResponseInterceptor()
+    }
+
+    @Provides
+    @Singleton
     fun providesOkHttpClient(
         @Named("AuthInterceptor") authInterceptor: Interceptor,
-        @Named("ConnectivityInterceptor") connectivityInterceptor: Interceptor
+        @Named("ConnectivityInterceptor") connectivityInterceptor: Interceptor,
+        @Named("ErrorResponseInterceptor") errorResponseInterceptor: Interceptor
     ): OkHttpClient {
 
         val httpLoggingInterceptor = HttpLoggingInterceptor().apply {
@@ -78,6 +86,7 @@ object NetworkModule {
         val httpBuilder = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(httpLoggingInterceptor)
+            .addInterceptor(errorResponseInterceptor)  // Add error response interceptor
             .addInterceptor(connectivityInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

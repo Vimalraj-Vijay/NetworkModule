@@ -20,3 +20,5 @@ local.properties
 /.idea/migrations.xml
 /.idea/misc.xml
 /.idea/vcs.xml
+/.idea/AndroidProjectSystem.xml
+/.idea/runConfigurations.xml
