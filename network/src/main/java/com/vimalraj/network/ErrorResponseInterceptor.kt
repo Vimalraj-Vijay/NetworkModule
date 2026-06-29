@@ -30,19 +30,10 @@ class ErrorResponseInterceptor : Interceptor {
                 val errorResponse = gson.fromJson(bodyString, ErrorResponse::class.java)
 
                 // Check if it contains error indicators
-                if (errorResponse?.status?.contains("Exception", ignoreCase = true) == true ||
-                    errorResponse?.error != null
-                ) {
+                if (errorResponse?.status?.contains("Exception", ignoreCase = true) == true) {
                     // Throw exception that will be caught by safeApiCall
-                    throw ServerErrorException(
-                        status = errorResponse.status,
-                        error = errorResponse.error,
-                        timestamp = errorResponse.timestamp
-                    )
+                    throw Exception("Server returned an error in the response body: ${errorResponse.error}")
                 }
-            } catch (e: ServerErrorException) {
-                // Re-throw our custom exception
-                throw e
             } catch (e: Exception) {
                 // If JSON parsing fails, it's not an error response, continue normally
             }

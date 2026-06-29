@@ -1,6 +1,7 @@
 package com.vimalraj.network
 
 import android.util.MalformedJsonException
+import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import retrofit2.HttpException
 import retrofit2.Response
@@ -8,18 +9,38 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.util.concurrent.TimeoutException
 
-// Safe API call handler with suspend
-suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ResultHandler<T> {
+
+/**
+ * Generic safe API call for ApiResponse wrapped endpoints
+ * Works with any response type T
+ *
+ * Success condition: response.isSuccessful && success == true && data != null
+ * Error condition: any other case
+ *
+ * @param T The type of data in the success response
+ * @param apiCall Suspend function that returns Response<ApiResponse<T>>
+ * @return ResultHandler<T> with the unwrapped data or error
+ */
+suspend fun <T> safeApiCallWithWrapper(
+    apiCall: suspend () -> Response<ApiResponse<T>>
+): ResultHandler<T> {
     return try {
         val response = apiCall()
-        val body = response.body()
 
-        if (response.isSuccessful && response.errorBody() == null) {
+        if (response.isSuccessful) {
+            val body = response.body()
+
             if (body != null) {
-                return if (response.code() == HttpURLConnection.HTTP_OK) {
-                    ResultHandler.Success(body)
+                // Check success field and data field
+                if (body.success == true && body.data != null) {
+                    ResultHandler.Success(body.data)
+                } else if (body.success == true && body.data == null) {
+                    ResultHandler.Partial(body.data, message = body.message ?: "Partial success with no data")
                 } else {
-                    ResultHandler.Partial(body)
+                    ResultHandler.Error(
+                        message = body.message ?: "Request failed",
+                        remoteApiError = RemoteApiError.BAD_REQUEST
+                    )
                 }
             } else {
                 ResultHandler.Error(
@@ -28,14 +49,27 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ResultHandler<T
                 )
             }
         } else {
+            // Try to parse error body as ApiResponse
+            val errorBody = response.errorBody()?.string()
+            val errorMessage = if (errorBody != null) {
+                try {
+                    val errorResponse = Gson().fromJson(errorBody, ApiResponse::class.java)
+                    errorResponse.message ?: "HTTP Error: ${response.code()}"
+                } catch (e: Exception) {
+                    "HTTP Error: ${response.code()} - ${response.message()}"
+                }
+            } else {
+                "HTTP Error: ${response.code()} - ${response.message()}"
+            }
+
             ResultHandler.Error(
-                message = "HTTP Error: ${response.code()} - ${response.message()}",
+                message = errorMessage,
                 remoteApiError = RemoteApiError.UNEXPECTED_ERROR
             )
         }
     } catch (exception: Throwable) {
         handleApiError(exception)
-    }
+    } as ResultHandler<T>
 }
 
 // Exception handling with detailed Resource.Error
@@ -43,7 +77,6 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
     println("🚨 Exception caught in Network Call 🚨")
     exception.printStackTrace()
     val remoteApiError = when (exception) {
-        is ServerErrorException -> mapStatusToError(exception.status)
         is TimeoutException -> RemoteApiError.TIMEOUT
         is NoConnectivityException -> RemoteApiError.NO_INTERNET
         is JsonParseException, is MalformedJsonException -> RemoteApiError.JSON_PARSE
@@ -68,26 +101,4 @@ private fun <T> handleApiError(exception: Throwable): ResultHandler<T> {
         exception = exception,
         remoteApiError = remoteApiError
     )
-}
-
-/**
- * Map server status strings to RemoteApiError
- * Used when server returns 200 OK with error details in response body
- */
-private fun mapStatusToError(status: String?): RemoteApiError {
-    return when {
-        status == null -> RemoteApiError.UNEXPECTED_ERROR
-        status.contains("UserException", ignoreCase = true) -> RemoteApiError.BAD_REQUEST
-        status.contains("ValidationException", ignoreCase = true) -> RemoteApiError.BAD_REQUEST
-        status.contains("AuthException", ignoreCase = true) -> RemoteApiError.UNAUTHORIZED
-        status.contains("NotFoundException", ignoreCase = true) -> RemoteApiError.RESOURCE_NOT_FOUND
-        status.contains("ServerException", ignoreCase = true) -> RemoteApiError.SERVER_ERROR
-        status.contains("TimeoutException", ignoreCase = true) -> RemoteApiError.TIMEOUT
-        status.contains(
-            "ForbiddenException",
-            ignoreCase = true
-        ) -> RemoteApiError.FORBIDDEN_ACCESS_DENIED
-
-        else -> RemoteApiError.UNEXPECTED_ERROR
-    }
 }

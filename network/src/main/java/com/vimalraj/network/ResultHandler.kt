@@ -4,7 +4,7 @@ sealed class ResultHandler<out RESPONSE> {
 
     data class Success<RESPONSE>(val data: RESPONSE) : ResultHandler<RESPONSE>()
 
-    data class Partial<RESPONSE>(val data: RESPONSE) : ResultHandler<RESPONSE>()
+    data class Partial<RESPONSE>(val data: RESPONSE, val message: String = "") : ResultHandler<RESPONSE>()
 
     data class Error(
         val message: String = "",
